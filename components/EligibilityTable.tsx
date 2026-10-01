@@ -2,7 +2,7 @@
 
 import { useData } from '@/context/DataContext';
 import { useAuth } from '@/context/AuthContext';
-import { FiSearch, FiFilter, FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { useState } from 'react';
 
 interface EligibilityTableProps {
@@ -32,12 +32,6 @@ export default function EligibilityTable({ category, title }: EligibilityTablePr
       <div className="p-6 border-b border-gray-700">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold text-white">{title}</h2>
-          {isAdmin && (
-            <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all">
-              <FiPlus className="w-4 h-4" />
-              <span>New Item</span>
-            </button>
-          )}
         </div>
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
