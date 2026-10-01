@@ -113,7 +113,16 @@ export default function EligibilityTable({ category, title }: EligibilityTablePr
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-gray-300 text-sm">
-                      {item.result_data?.checked_at ? new Date(item.result_data.checked_at).toLocaleDateString() : 'N/A'}
+                      {item.result_data?.checked_at ? new Date(item.result_data.checked_at).toLocaleString('en-US', {
+  year: 'numeric',
+  month: 'short',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: true,
+  timeZoneName: 'short', // optional, shows PKT / UTC etc.
+}) : 'N/A'}
                     </div>
                   </td>
                 </tr>
