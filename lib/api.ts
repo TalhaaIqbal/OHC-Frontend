@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.BACKEND_URI || 'http://localhost:3001';
+const API_BASE_URL = process.env.BACKEND_URI || 'https://ohc-agents-201cb3da6038.herokuapp.com';
 
 interface ApiResponse<T> {
   data?: T;
