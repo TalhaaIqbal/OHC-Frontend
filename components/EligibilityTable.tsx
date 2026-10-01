@@ -18,9 +18,10 @@ export default function EligibilityTable({ category, title }: EligibilityTablePr
   const filteredItems = items.filter(
     (item) =>
       item.category === category &&
-      (item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.ghlContactId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.reason.toLowerCase().includes(searchTerm.toLowerCase()))
+      ((item.patient?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.contact_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.payer?.name || '').toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const isAdmin = user?.role === 'admin';
@@ -60,16 +61,22 @@ export default function EligibilityTable({ category, title }: EligibilityTablePr
           <thead className="bg-gray-900">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Item
+                Patient Name
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                GHL Contact ID
+                Contact ID
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Payer
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Reason
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Appointment Status
+                Checked At
               </th>
               {isAdmin && (
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -81,34 +88,42 @@ export default function EligibilityTable({ category, title }: EligibilityTablePr
           <tbody className="divide-y divide-gray-700">
             {filteredItems.length === 0 ? (
               <tr>
-                <td colSpan={isAdmin ? 5 : 4} className="px-6 py-12 text-center text-gray-400">
+                <td colSpan={isAdmin ? 7 : 6} className="px-6 py-12 text-center text-gray-400">
                   No items found
                 </td>
               </tr>
             ) : (
               filteredItems.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-700/50 transition-colors">
+                <tr key={item._id} className="hover:bg-gray-700/50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-white font-medium">{item.name}</div>
+                    <div className="text-white font-medium">{item.patient?.name || 'N/A'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-gray-300">{item.ghlContactId}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-gray-300">{item.reason}</div>
+                    <div className="text-gray-300">{item.contact_id}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        item.appointmentStatus === 'Scheduled'
-                          ? 'bg-blue-500/20 text-blue-400'
-                          : item.appointmentStatus === 'Completed'
+                        item.status === 'Eligible' || item.status === 'Eligible'
                           ? 'bg-green-500/20 text-green-400'
+                          : item.status === 'Not Eligible' || item.status === 'Not Accepted'
+                          ? 'bg-red-500/20 text-red-400'
                           : 'bg-yellow-500/20 text-yellow-400'
                       }`}
                     >
-                      {item.appointmentStatus}
+                      {item.status}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-gray-300">{item.payer?.name || item.insurance_type || 'N/A'}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-gray-300">{item.reason || 'N/A'}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-gray-300 text-sm">
+                      {item.checked_at ? new Date(item.checked_at).toLocaleDateString() : 'N/A'}
+                    </div>
                   </td>
                   {isAdmin && (
                     <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -117,7 +132,7 @@ export default function EligibilityTable({ category, title }: EligibilityTablePr
                           <FiEdit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => deleteItem(item.id)}
+                          onClick={() => deleteItem(item._id)}
                           className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-600 rounded-lg transition-all"
                         >
                           <FiTrash2 className="w-4 h-4" />

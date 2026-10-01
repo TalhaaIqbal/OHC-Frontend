@@ -4,10 +4,12 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import EligibilityTable from '@/components/EligibilityTable';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { FiArrowLeft } from 'react-icons/fi';
+import { FiArrowLeft, FiRefreshCw } from 'react-icons/fi';
+import { useData } from '@/context/DataContext';
 
 export default function NotAcceptedPage() {
   const router = useRouter();
+  const { refreshEligibility, loading } = useData();
 
   return (
     <ProtectedRoute>
@@ -22,8 +24,20 @@ export default function NotAcceptedPage() {
               <FiArrowLeft className="w-4 h-4" />
               <span>Back to Dashboard</span>
             </button>
-            <h1 className="text-3xl font-bold text-white">Not Accepted Items</h1>
-            <p className="text-gray-400 mt-1">View and manage not accepted eligibility test results</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-white">Not Accepted Items</h1>
+                <p className="text-gray-400 mt-1">View and manage not accepted eligibility test results</p>
+              </div>
+              <button
+                onClick={refreshEligibility}
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-all disabled:opacity-50"
+              >
+                <FiRefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
+              </button>
+            </div>
           </div>
           <EligibilityTable category="notAccepted" title="Not Accepted" />
         </div>

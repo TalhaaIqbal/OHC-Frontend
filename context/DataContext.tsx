@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { statesApi, rulesApi } from '@/lib/api';
+import { statesApi, rulesApi, eligibilityApi } from '@/lib/api';
 
 interface State {
   state: string;
@@ -17,11 +17,28 @@ interface Rule {
 }
 
 interface EligibilityItem {
-  id: string;
-  name: string;
-  ghlContactId: string;
+  _id: string;
+  contact_id: string;
+  status: string;
   reason: string;
-  appointmentStatus: string;
+  insurance_type: string;
+  state: string;
+  checked_at: string;
+  created_at: string;
+  updated_at: string;
+  patient?: {
+    name?: string;
+    dob?: string;
+    gender?: string;
+  };
+  payer?: {
+    name?: string;
+    plan_type?: string;
+  };
+  provider?: {
+    name?: string;
+    npi?: string;
+  };
   category: 'accepted' | 'notAccepted' | 'needsReview';
 }
 
@@ -33,30 +50,23 @@ interface DataContextType {
   error: string | null;
   refreshStates: () => Promise<void>;
   refreshRules: () => Promise<void>;
+  refreshEligibility: () => Promise<void>;
   addState: (state: State) => Promise<void>;
   updateState: (index: number, state: Partial<State>) => Promise<void>;
   deleteState: (index: number) => Promise<void>;
   addRule: (rule: Rule) => Promise<void>;
   updateRule: (index: number, rule: Partial<Rule>) => Promise<void>;
   deleteRule: (index: number) => Promise<void>;
-  addItem: (item: Omit<EligibilityItem, 'id'>) => void;
-  updateItem: (id: string, item: Partial<EligibilityItem>) => void;
-  deleteItem: (id: string) => void;
+  addItem: (item: Omit<EligibilityItem, '_id'>) => void;
+  updateItem: (_id: string, item: Partial<EligibilityItem>) => void;
+  deleteItem: (_id: string) => void;
   getCategoryCount: (category: 'accepted' | 'notAccepted' | 'needsReview') => number;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 const defaultStates: State[] = [];
-
-const defaultItems: EligibilityItem[] = [
-  { id: '1', name: 'John Doe', ghlContactId: 'GHL001', reason: 'Income verification', appointmentStatus: 'Scheduled', category: 'accepted' },
-  { id: '2', name: 'Jane Smith', ghlContactId: 'GHL002', reason: 'Missing documents', appointmentStatus: 'Pending', category: 'notAccepted' },
-  { id: '3', name: 'Bob Johnson', ghlContactId: 'GHL003', reason: 'Review required', appointmentStatus: 'Scheduled', category: 'needsReview' },
-  { id: '4', name: 'Alice Brown', ghlContactId: 'GHL004', reason: 'Age verification', appointmentStatus: 'Completed', category: 'accepted' },
-  { id: '5', name: 'Charlie Wilson', ghlContactId: 'GHL005', reason: 'Address verification', appointmentStatus: 'Pending', category: 'notAccepted' },
-  { id: '6', name: 'Diana Lee', ghlContactId: 'GHL006', reason: 'Additional info needed', appointmentStatus: 'Scheduled', category: 'needsReview' },
-];
+const defaultItems: EligibilityItem[] = [];
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [states, setStates] = useState<State[]>(defaultStates);
@@ -99,19 +109,46 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const refreshEligibility = async () => {
+    setLoading(true);
+    setError(null);
+    const result = await eligibilityApi.getAll();
+    setLoading(false);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    if (result.data) {
+      // Map backend status to category
+      const itemsWithCategory = result.data.map((item: any) => {
+        let category: 'accepted' | 'notAccepted' | 'needsReview';
+        const status = item.status?.toLowerCase() || '';
+
+        if (status === 'eligible' || status === 'accepted') {
+          category = 'accepted';
+        } else if (status === 'not eligible' || status === 'not accepted') {
+          category = 'notAccepted';
+        } else {
+          category = 'needsReview';
+        }
+
+        return {
+          ...item,
+          _id: item._id || item.id,
+          category,
+        };
+      });
+      setItems(itemsWithCategory);
+    }
+  };
+
   useEffect(() => {
     refreshStates();
     refreshRules();
+    refreshEligibility();
   }, []);
-
-  useEffect(() => {
-    const storedItems = localStorage.getItem('items');
-    if (storedItems) setItems(JSON.parse(storedItems));
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('items', JSON.stringify(items));
-  }, [items]);
 
   const addState = async (state: State) => {
     setLoading(true);
@@ -201,17 +238,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     await refreshRules();
   };
 
-  const addItem = (item: Omit<EligibilityItem, 'id'>) => {
-    const newItem = { ...item, id: Date.now().toString() };
+  const addItem = (item: Omit<EligibilityItem, '_id'>) => {
+    const newItem = { ...item, _id: Date.now().toString() };
     setItems([...items, newItem]);
   };
 
-  const updateItem = (id: string, updates: Partial<EligibilityItem>) => {
-    setItems(items.map(i => i.id === id ? { ...i, ...updates } : i));
+  const updateItem = (_id: string, updates: Partial<EligibilityItem>) => {
+    setItems(items.map(i => i._id === _id ? { ...i, ...updates } : i));
   };
 
-  const deleteItem = (id: string) => {
-    setItems(items.filter(i => i.id !== id));
+  const deleteItem = (_id: string) => {
+    setItems(items.filter(i => i._id !== _id));
   };
 
   const getCategoryCount = (category: 'accepted' | 'notAccepted' | 'needsReview') => {
@@ -227,6 +264,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       error,
       refreshStates,
       refreshRules,
+      refreshEligibility,
       addState,
       updateState,
       deleteState,

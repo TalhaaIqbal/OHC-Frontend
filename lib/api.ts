@@ -63,3 +63,7 @@ export const rulesApi = {
 export const configApi = {
   reload: () => api.post<{ status: string; message: string }>('/api/v1/config/reload', {}),
 };
+
+export const eligibilityApi = {
+  getAll: () => api.get<any[]>('/api/v1/eligibility'),
+};
