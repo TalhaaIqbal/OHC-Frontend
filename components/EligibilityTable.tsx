@@ -18,10 +18,11 @@ export default function EligibilityTable({ category, title }: EligibilityTablePr
   const filteredItems = items.filter(
     (item) =>
       item.category === category &&
-      ((item.patient?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ((item.result_data?.patient?.first_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.result_data?.patient?.last_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.contact_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.payer?.name || '').toLowerCase().includes(searchTerm.toLowerCase()))
+        (item.result_data?.reason || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.result_data?.payer?.name || '').toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const isAdmin = user?.role === 'admin';
@@ -96,7 +97,9 @@ export default function EligibilityTable({ category, title }: EligibilityTablePr
               filteredItems.map((item) => (
                 <tr key={item._id} className="hover:bg-gray-700/50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-white font-medium">{item.patient?.name || 'N/A'}</div>
+                    <div className="text-white font-medium">
+                      {item.result_data?.patient?.first_name} {item.result_data?.patient?.last_name}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-gray-300">{item.contact_id}</div>
@@ -104,25 +107,25 @@ export default function EligibilityTable({ category, title }: EligibilityTablePr
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        item.status === 'Eligible' || item.status === 'Eligible'
+                        item.result_data?.status === 'Eligible' || item.result_data?.status === 'Eligible'
                           ? 'bg-green-500/20 text-green-400'
-                          : item.status === 'Not Eligible' || item.status === 'Not Accepted'
+                          : item.result_data?.status === 'Not Eligible' || item.result_data?.status === 'Not Accepted'
                           ? 'bg-red-500/20 text-red-400'
                           : 'bg-yellow-500/20 text-yellow-400'
                       }`}
                     >
-                      {item.status}
+                      {item.result_data?.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-gray-300">{item.payer?.name || item.insurance_type || 'N/A'}</div>
+                    <div className="text-gray-300">{item.result_data?.payer?.name || item.result_data?.insurance_type || 'N/A'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-gray-300">{item.reason || 'N/A'}</div>
+                    <div className="text-gray-300">{item.result_data?.reason || 'N/A'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-gray-300 text-sm">
-                      {item.checked_at ? new Date(item.checked_at).toLocaleDateString() : 'N/A'}
+                      {item.result_data?.checked_at ? new Date(item.result_data.checked_at).toLocaleDateString() : 'N/A'}
                     </div>
                   </td>
                   {isAdmin && (

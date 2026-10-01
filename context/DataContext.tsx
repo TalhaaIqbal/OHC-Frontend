@@ -19,26 +19,43 @@ interface Rule {
 interface EligibilityItem {
   _id: string;
   contact_id: string;
-  status: string;
-  reason: string;
-  insurance_type: string;
-  state: string;
-  checked_at: string;
   created_at: string;
+  eligibility_data: {
+    first_name: string;
+    last_name: string;
+    date_of_birth: string;
+    member_id: string;
+    payer_name: string;
+    payer_id: string;
+    service_value: string;
+  };
+  result_data: {
+    eligible: boolean;
+    status: string;
+    reason: string;
+    status_details: any;
+    patient: {
+      first_name: string;
+      last_name: string;
+      date_of_birth: string;
+      member_id: string;
+    };
+    payer: {
+      name: string;
+      id: string;
+    };
+    provider: {
+      name: string;
+      npi: string;
+    };
+    insurance_type: string;
+    contact_id: string;
+    service_value: string;
+    state: string;
+    dependent: any;
+    checked_at: string;
+  };
   updated_at: string;
-  patient?: {
-    name?: string;
-    dob?: string;
-    gender?: string;
-  };
-  payer?: {
-    name?: string;
-    plan_type?: string;
-  };
-  provider?: {
-    name?: string;
-    npi?: string;
-  };
   category: 'accepted' | 'notAccepted' | 'needsReview';
 }
 
@@ -121,10 +138,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (result.data) {
-      // Map backend status to category
+      // Map backend status to category based on result_data.status
       const itemsWithCategory = result.data.map((item: any) => {
         let category: 'accepted' | 'notAccepted' | 'needsReview';
-        const status = item.status?.toLowerCase() || '';
+        const status = item.result_data?.status?.toLowerCase() || '';
 
         if (status === 'eligible' || status === 'accepted') {
           category = 'accepted';
