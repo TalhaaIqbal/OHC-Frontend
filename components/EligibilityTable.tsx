@@ -1,7 +1,7 @@
 'use client';
 
 import { useData } from '@/context/DataContext';
-import { FiSearch, FiFilter, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiSearch, FiFilter } from 'react-icons/fi';
 import { useState } from 'react';
 
 interface EligibilityTableProps {
@@ -10,9 +10,8 @@ interface EligibilityTableProps {
 }
 
 export default function EligibilityTable({ category, title }: EligibilityTableProps) {
-  const { items, deleteItem } = useData();
+  const { items } = useData();
   const [searchTerm, setSearchTerm] = useState('');
-  const [swipedRow, setSwipedRow] = useState<string | null>(null);
 
   const filteredItems = items.filter(
     (item) =>
@@ -23,18 +22,6 @@ export default function EligibilityTable({ category, title }: EligibilityTablePr
         (item.result_data?.reason || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.result_data?.payer?.name || '').toLowerCase().includes(searchTerm.toLowerCase()))
   );
-
-  const handleRowClick = (itemId: string) => {
-    if (swipedRow === itemId) {
-      setSwipedRow(null);
-    } else {
-      setSwipedRow(itemId);
-    }
-  };
-
-  const closeSwipe = () => {
-    setSwipedRow(null);
-  };
 
   return (
     <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
@@ -60,7 +47,7 @@ export default function EligibilityTable({ category, title }: EligibilityTablePr
         </div>
       </div>
 
-      <div className="overflow-x-auto overflow-visible" onClick={swipedRow ? closeSwipe : undefined}>
+      <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-900">
             <tr>
@@ -95,8 +82,7 @@ export default function EligibilityTable({ category, title }: EligibilityTablePr
               filteredItems.map((item) => (
                 <tr
                   key={item._id}
-                  className={`hover:bg-gray-700/50 transition-colors relative overflow-visible ${swipedRow === item._id ? 'bg-gray-700' : ''}`}
-                  onClick={() => handleRowClick(item._id)}
+                  className="hover:bg-gray-700/50 transition-colors"
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-white font-medium">
@@ -130,41 +116,6 @@ export default function EligibilityTable({ category, title }: EligibilityTablePr
                       {item.result_data?.checked_at ? new Date(item.result_data.checked_at).toLocaleDateString() : 'N/A'}
                     </div>
                   </td>
-                  {/* Swipe action buttons - slide in from right */}
-                  {swipedRow === item._id && (
-                    <div
-                      className="absolute inset-y-0 right-0 flex items-center gap-2 pr-6 pl-32 bg-gray-800/95 backdrop-blur-sm transition-all z-10"
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ minWidth: '300px' }}
-                    >
-                      <button
-                        onClick={() => {
-                          closeSwipe();
-                          // Edit functionality here
-                        }}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all whitespace-nowrap"
-                      >
-                        <FiEdit2 className="w-4 h-4" />
-                        <span>Edit</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          deleteItem(item._id);
-                          closeSwipe();
-                        }}
-                        className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-all whitespace-nowrap"
-                      >
-                        <FiTrash2 className="w-4 h-4" />
-                        <span>Delete</span>
-                      </button>
-                      <button
-                        onClick={closeSwipe}
-                        className="flex items-center gap-2 bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg transition-all whitespace-nowrap"
-                      >
-                        <span>Cancel</span>
-                      </button>
-                    </div>
-                  )}
                 </tr>
               ))
             )}
