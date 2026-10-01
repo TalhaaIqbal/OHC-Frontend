@@ -65,5 +65,27 @@ export const configApi = {
 };
 
 export const eligibilityApi = {
-  getAll: () => api.get<any[]>('/api/v1/eligibility'),
+  getAll: (contact_id?: string, limit: number = 100) => {
+    const params = new URLSearchParams();
+    if (contact_id) params.append('contact_id', contact_id);
+    params.append('limit', limit.toString());
+    const query = params.toString();
+    return api.get<any[]>(`/api/v1/insurance/eligibility/results${query ? `?${query}` : ''}`);
+  },
+  check: (data: {
+    first_name: string;
+    last_name: string;
+    date_of_birth: string;
+    member_id: string;
+    payer_name: string;
+    payer_id: string;
+    provider_name?: string | null;
+    provider_npi?: string | null;
+    contact_id?: string | null;
+    pipeline_stage_id?: string | null;
+    service_value?: string;
+    dependent_first_name?: string | null;
+    dependent_last_name?: string | null;
+    dependent_date_of_birth?: string | null;
+  }) => api.post<any>('/api/v1/insurance/eligibility/check', data),
 };
