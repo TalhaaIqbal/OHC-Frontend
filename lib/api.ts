@@ -43,17 +43,23 @@ export const api = {
 };
 
 export const statesApi = {
-  getAll: () => api.get<any[]>('/api/v1/config/states'),
-  add: (state: { name: string; code: string; served: boolean }) =>
+  getAll: () => api.get<{ type: string; states: any[]; updated_at?: string }>('/api/v1/config/states'),
+  add: (state: { state: string; abbreviation: string; served: boolean; enrolled: boolean }) =>
     api.post('/api/v1/config/states', state),
-  update: (index: number, state: { name: string; code: string; served: boolean }) =>
+  update: (index: number, state: { state: string; abbreviation: string; served: boolean; enrolled: boolean }) =>
     api.put(`/api/v1/config/states/${index}`, state),
   delete: (index: number) => api.delete(`/api/v1/config/states/${index}`),
 };
 
 export const rulesApi = {
-  getAll: () => api.get<any[]>('/api/v1/config/rules'),
-  add: (rule: any) => api.post('/api/v1/config/rules', rule),
-  update: (index: number, rule: any) => api.put(`/api/v1/config/rules/${index}`, rule),
+  getAll: () => api.get<{ type: string; rules: any[]; updated_at?: string }>('/api/v1/config/rules'),
+  add: (rule: { payer_plan_type: string; decision: string; condition: string }) =>
+    api.post('/api/v1/config/rules', rule),
+  update: (index: number, rule: { payer_plan_type: string; decision: string; condition: string }) =>
+    api.put(`/api/v1/config/rules/${index}`, rule),
   delete: (index: number) => api.delete(`/api/v1/config/rules/${index}`),
+};
+
+export const configApi = {
+  reload: () => api.post<{ status: string; message: string }>('/api/v1/config/reload', {}),
 };

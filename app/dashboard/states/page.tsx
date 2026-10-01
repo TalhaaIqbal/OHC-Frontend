@@ -15,14 +15,14 @@ export default function StatesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingState, setEditingState] = useState<number | null>(null);
-  const [formData, setFormData] = useState({ name: '', code: '', served: false });
+  const [formData, setFormData] = useState({ state: '', abbreviation: '', served: false, enrolled: false });
 
   const isAdmin = user?.role === 'admin';
 
   const filteredStates = states.filter(
     (state) =>
-      state.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      state.code.toLowerCase().includes(searchTerm.toLowerCase())
+      state.state.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      state.abbreviation.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,13 +35,18 @@ export default function StatesPage() {
     closeModal();
   };
 
-  const openModal = (state?: typeof states[0]) => {
+  const openModal = (state?: typeof states[0], index?: number) => {
     if (state) {
-      setEditingState(state.index);
-      setFormData({ name: state.name, code: state.code, served: state.served });
+      setEditingState(index || null);
+      setFormData({
+        state: state.state,
+        abbreviation: state.abbreviation,
+        served: state.served,
+        enrolled: state.enrolled
+      });
     } else {
       setEditingState(null);
-      setFormData({ name: '', code: '', served: false });
+      setFormData({ state: '', abbreviation: '', served: false, enrolled: false });
     }
     setIsModalOpen(true);
   };
@@ -49,7 +54,7 @@ export default function StatesPage() {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingState(null);
-    setFormData({ name: '', code: '', served: false });
+    setFormData({ state: '', abbreviation: '', served: false, enrolled: false });
   };
 
   const handleDelete = async (index: number) => {
@@ -124,10 +129,13 @@ export default function StatesPage() {
                     State Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Code
+                    Abbreviation
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Served
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                    Enrolled
                   </th>
                   {isAdmin && (
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -139,18 +147,18 @@ export default function StatesPage() {
               <tbody className="divide-y divide-gray-700">
                 {filteredStates.length === 0 ? (
                   <tr>
-                    <td colSpan={isAdmin ? 4 : 3} className="px-6 py-12 text-center text-gray-400">
+                    <td colSpan={isAdmin ? 5 : 4} className="px-6 py-12 text-center text-gray-400">
                       No states found
                     </td>
                   </tr>
                 ) : (
-                  filteredStates.map((state) => (
-                    <tr key={state.index} className="hover:bg-gray-700/50 transition-colors">
+                  filteredStates.map((state, index) => (
+                    <tr key={index} className="hover:bg-gray-700/50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-white font-medium">{state.name}</div>
+                        <div className="text-white font-medium">{state.state}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-gray-300">{state.code}</div>
+                        <div className="text-gray-300">{state.abbreviation}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
@@ -163,17 +171,28 @@ export default function StatesPage() {
                           {state.served ? 'Yes' : 'No'}
                         </span>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            state.enrolled
+                              ? 'bg-green-500/20 text-green-400'
+                              : 'bg-red-500/20 text-red-400'
+                          }`}
+                        >
+                          {state.enrolled ? 'Yes' : 'No'}
+                        </span>
+                      </td>
                       {isAdmin && (
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button
-                              onClick={() => openModal(state)}
+                              onClick={() => openModal(state, index)}
                               className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-lg transition-all"
                             >
                               <FiEdit2 className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => handleDelete(state.index)}
+                              onClick={() => handleDelete(index)}
                               className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-600 rounded-lg transition-all"
                             >
                               <FiTrash2 className="w-4 h-4" />
@@ -208,8 +227,8 @@ export default function StatesPage() {
                   </label>
                   <input
                     type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    value={formData.state}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                     className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g., California"
                     required
@@ -217,12 +236,12 @@ export default function StatesPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    State Code
+                    Abbreviation
                   </label>
                   <input
                     type="text"
-                    value={formData.code}
-                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    value={formData.abbreviation}
+                    onChange={(e) => setFormData({ ...formData, abbreviation: e.target.value })}
                     className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g., CA"
                     required
@@ -238,6 +257,18 @@ export default function StatesPage() {
                   />
                   <label htmlFor="served" className="text-sm font-medium text-gray-300">
                     Served
+                  </label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="enrolled"
+                    checked={formData.enrolled}
+                    onChange={(e) => setFormData({ ...formData, enrolled: e.target.checked })}
+                    className="w-4 h-4 bg-gray-700 border-gray-600 rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                  <label htmlFor="enrolled" className="text-sm font-medium text-gray-300">
+                    Enrolled
                   </label>
                 </div>
                 <div className="flex gap-3 pt-4">

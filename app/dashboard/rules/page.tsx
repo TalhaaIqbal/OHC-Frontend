@@ -15,14 +15,15 @@ export default function RulesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<number | null>(null);
-  const [formData, setFormData] = useState({ payer: '', plan: '' });
+  const [formData, setFormData] = useState({ payer_plan_type: '', decision: '', condition: '' });
 
   const isAdmin = user?.role === 'admin';
 
   const filteredRules = rules.filter(
     (rule) =>
-      (rule.payer && rule.payer.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (rule.plan && rule.plan.toLowerCase().includes(searchTerm.toLowerCase()))
+      (rule.payer_plan_type && rule.payer_plan_type.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (rule.decision && rule.decision.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (rule.condition && rule.condition.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,13 +36,17 @@ export default function RulesPage() {
     closeModal();
   };
 
-  const openModal = (rule?: typeof rules[0]) => {
+  const openModal = (rule?: typeof rules[0], index?: number) => {
     if (rule) {
-      setEditingRule(rule.index);
-      setFormData({ payer: rule.payer || '', plan: rule.plan || '' });
+      setEditingRule(index || null);
+      setFormData({
+        payer_plan_type: rule.payer_plan_type || '',
+        decision: rule.decision || '',
+        condition: rule.condition || ''
+      });
     } else {
       setEditingRule(null);
-      setFormData({ payer: '', plan: '' });
+      setFormData({ payer_plan_type: '', decision: '', condition: '' });
     }
     setIsModalOpen(true);
   };
@@ -49,7 +54,7 @@ export default function RulesPage() {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingRule(null);
-    setFormData({ payer: '', plan: '' });
+    setFormData({ payer_plan_type: '', decision: '', condition: '' });
   };
 
   const handleDelete = async (index: number) => {
@@ -124,10 +129,13 @@ export default function RulesPage() {
                       Index
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Payer
+                      Payer/Plan Type
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Plan
+                      Decision
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      Condition
                     </th>
                     {isAdmin && (
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -139,33 +147,36 @@ export default function RulesPage() {
                 <tbody className="divide-y divide-gray-700">
                   {filteredRules.length === 0 ? (
                     <tr>
-                      <td colSpan={isAdmin ? 4 : 3} className="px-6 py-12 text-center text-gray-400">
+                      <td colSpan={isAdmin ? 5 : 4} className="px-6 py-12 text-center text-gray-400">
                         No rules found
                       </td>
                     </tr>
                   ) : (
-                    filteredRules.map((rule) => (
-                      <tr key={rule.index} className="hover:bg-gray-700/50 transition-colors">
+                    filteredRules.map((rule, index) => (
+                      <tr key={index} className="hover:bg-gray-700/50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-white font-medium">{rule.index}</div>
+                          <div className="text-white font-medium">{index}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-gray-300">{rule.payer || '-'}</div>
+                          <div className="text-gray-300">{rule.payer_plan_type || '-'}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-gray-300">{rule.plan || '-'}</div>
+                          <div className="text-gray-300">{rule.decision || '-'}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-gray-300">{rule.condition || '-'}</div>
                         </td>
                         {isAdmin && (
                           <td className="px-6 py-4 whitespace-nowrap text-right">
                             <div className="flex items-center justify-end gap-2">
                               <button
-                                onClick={() => openModal(rule)}
+                                onClick={() => openModal(rule, index)}
                                 className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-lg transition-all"
                               >
                                 <FiEdit2 className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => handleDelete(rule.index)}
+                                onClick={() => handleDelete(index)}
                                 className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-600 rounded-lg transition-all"
                               >
                                 <FiTrash2 className="w-4 h-4" />
@@ -196,27 +207,40 @@ export default function RulesPage() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Payer
+                      Payer/Plan Type
                     </label>
                     <input
                       type="text"
-                      value={formData.payer}
-                      onChange={(e) => setFormData({ ...formData, payer: e.target.value })}
+                      value={formData.payer_plan_type}
+                      onChange={(e) => setFormData({ ...formData, payer_plan_type: e.target.value })}
                       className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="e.g., Medicare"
+                      placeholder="e.g., Medicare Part A"
                       required
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Plan
+                      Decision
                     </label>
                     <input
                       type="text"
-                      value={formData.plan}
-                      onChange={(e) => setFormData({ ...formData, plan: e.target.value })}
+                      value={formData.decision}
+                      onChange={(e) => setFormData({ ...formData, decision: e.target.value })}
                       className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="e.g., Part A"
+                      placeholder="e.g., Accept"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Condition
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.condition}
+                      onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
+                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g., Age >= 65"
                       required
                     />
                   </div>

@@ -4,17 +4,16 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { statesApi, rulesApi } from '@/lib/api';
 
 interface State {
-  index: number;
-  name: string;
-  code: string;
+  state: string;
+  abbreviation: string;
   served: boolean;
+  enrolled: boolean;
 }
 
 interface Rule {
-  index: number;
-  payer?: string;
-  plan?: string;
-  [key: string]: any;
+  payer_plan_type: string;
+  decision: string;
+  condition: string;
 }
 
 interface EligibilityItem {
@@ -34,10 +33,10 @@ interface DataContextType {
   error: string | null;
   refreshStates: () => Promise<void>;
   refreshRules: () => Promise<void>;
-  addState: (state: Omit<State, 'index'>) => Promise<void>;
+  addState: (state: State) => Promise<void>;
   updateState: (index: number, state: Partial<State>) => Promise<void>;
   deleteState: (index: number) => Promise<void>;
-  addRule: (rule: Omit<Rule, 'index'>) => Promise<void>;
+  addRule: (rule: Rule) => Promise<void>;
   updateRule: (index: number, rule: Partial<Rule>) => Promise<void>;
   deleteRule: (index: number) => Promise<void>;
   addItem: (item: Omit<EligibilityItem, 'id'>) => void;
@@ -78,7 +77,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (result.data) {
-      setStates(result.data);
+      // Backend returns { type: "states", states: [...], updated_at: ... }
+      setStates(result.data.states || []);
     }
   };
 
@@ -94,7 +94,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (result.data) {
-      setRules(result.data);
+      // Backend returns { type: "rules", rules: [...], updated_at: ... }
+      setRules(result.data.rules || []);
     }
   };
 
@@ -112,7 +113,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('items', JSON.stringify(items));
   }, [items]);
 
-  const addState = async (state: Omit<State, 'index'>) => {
+  const addState = async (state: State) => {
     setLoading(true);
     setError(null);
     const result = await statesApi.add(state);
@@ -129,7 +130,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const updateState = async (index: number, updates: Partial<State>) => {
     setLoading(true);
     setError(null);
-    const result = await statesApi.update(index, updates);
+    const currentState = states[index];
+    const updatedState = { ...currentState, ...updates } as State;
+    const result = await statesApi.update(index, updatedState);
     setLoading(false);
 
     if (result.error) {
@@ -154,7 +157,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     await refreshStates();
   };
 
-  const addRule = async (rule: Omit<Rule, 'index'>) => {
+  const addRule = async (rule: Rule) => {
     setLoading(true);
     setError(null);
     const result = await rulesApi.add(rule);
@@ -171,7 +174,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const updateRule = async (index: number, updates: Partial<Rule>) => {
     setLoading(true);
     setError(null);
-    const result = await rulesApi.update(index, updates);
+    const currentRule = rules[index];
+    const updatedRule = { ...currentRule, ...updates } as Rule;
+    const result = await rulesApi.update(index, updatedRule);
     setLoading(false);
 
     if (result.error) {
