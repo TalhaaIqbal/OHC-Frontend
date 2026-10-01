@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import Sidebar from '@/components/Sidebar';
-import { FiCheckCircle, FiXCircle, FiAlertCircle } from 'react-icons/fi';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { FiCheckCircle, FiXCircle, FiAlertCircle, FiMap } from 'react-icons/fi';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -43,9 +44,10 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-gray-900">
-      <Sidebar />
-      <div className="flex-1 p-8">
+    <ProtectedRoute>
+      <div className="flex min-h-screen bg-gray-900">
+        <Sidebar />
+        <div className="flex-1 p-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
           <p className="text-gray-400">Welcome back, {user?.name}</p>
@@ -106,5 +108,6 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   );
 }

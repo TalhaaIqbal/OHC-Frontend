@@ -13,6 +13,7 @@ export default function Sidebar() {
     { icon: FiHome, label: 'Dashboard', path: '/dashboard' },
     { icon: FiGrid, label: 'Eligibility', path: '/dashboard/eligibility' },
     { icon: FiMap, label: 'States', path: '/dashboard/states' },
+    { icon: FiSettings, label: 'Rules', path: '/dashboard/rules' },
   ];
 
   return (

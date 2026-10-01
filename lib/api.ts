@@ -1,0 +1,59 @@
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URI || 'http://localhost:3001';
+
+interface ApiResponse<T> {
+  data?: T;
+  error?: string;
+}
+
+async function request<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<ApiResponse<T>> {
+  const url = `${API_BASE_URL}${endpoint}`;
+
+  const defaultOptions: RequestInit = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  };
+
+  try {
+    const response = await fetch(url, { ...defaultOptions, ...options });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return { error: errorText || `HTTP error! status: ${response.status}` };
+    }
+
+    const data = await response.json();
+    return { data };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'An error occurred' };
+  }
+}
+
+export const api = {
+  get: <T>(endpoint: string) => request<T>(endpoint, { method: 'GET' }),
+  post: <T>(endpoint: string, body: unknown) =>
+    request<T>(endpoint, { method: 'POST', body: JSON.stringify(body) }),
+  put: <T>(endpoint: string, body: unknown) =>
+    request<T>(endpoint, { method: 'PUT', body: JSON.stringify(body) }),
+  delete: <T>(endpoint: string) => request<T>(endpoint, { method: 'DELETE' }),
+};
+
+export const statesApi = {
+  getAll: () => api.get<any[]>('/api/v1/config/states'),
+  add: (state: { name: string; code: string; served: boolean }) =>
+    api.post('/api/v1/config/states', state),
+  update: (index: number, state: { name: string; code: string; served: boolean }) =>
+    api.put(`/api/v1/config/states/${index}`, state),
+  delete: (index: number) => api.delete(`/api/v1/config/states/${index}`),
+};
+
+export const rulesApi = {
+  getAll: () => api.get<any[]>('/api/v1/config/rules'),
+  add: (rule: any) => api.post('/api/v1/config/rules', rule),
+  update: (index: number, rule: any) => api.put(`/api/v1/config/rules/${index}`, rule),
+  delete: (index: number) => api.delete(`/api/v1/config/rules/${index}`),
+};

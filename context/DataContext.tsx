@@ -1,12 +1,20 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { statesApi, rulesApi } from '@/lib/api';
 
 interface State {
-  id: string;
+  index: number;
   name: string;
   code: string;
   served: boolean;
+}
+
+interface Rule {
+  index: number;
+  payer?: string;
+  plan?: string;
+  [key: string]: any;
 }
 
 interface EligibilityItem {
@@ -21,9 +29,17 @@ interface EligibilityItem {
 interface DataContextType {
   states: State[];
   items: EligibilityItem[];
-  addState: (state: Omit<State, 'id'>) => void;
-  updateState: (id: string, state: Partial<State>) => void;
-  deleteState: (id: string) => void;
+  rules: Rule[];
+  loading: boolean;
+  error: string | null;
+  refreshStates: () => Promise<void>;
+  refreshRules: () => Promise<void>;
+  addState: (state: Omit<State, 'index'>) => Promise<void>;
+  updateState: (index: number, state: Partial<State>) => Promise<void>;
+  deleteState: (index: number) => Promise<void>;
+  addRule: (rule: Omit<Rule, 'index'>) => Promise<void>;
+  updateRule: (index: number, rule: Partial<Rule>) => Promise<void>;
+  deleteRule: (index: number) => Promise<void>;
   addItem: (item: Omit<EligibilityItem, 'id'>) => void;
   updateItem: (id: string, item: Partial<EligibilityItem>) => void;
   deleteItem: (id: string) => void;
@@ -32,13 +48,7 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-const defaultStates: State[] = [
-  { id: '1', name: 'California', code: 'CA', served: true },
-  { id: '2', name: 'Texas', code: 'TX', served: true },
-  { id: '3', name: 'New York', code: 'NY', served: false },
-  { id: '4', name: 'Florida', code: 'FL', served: true },
-  { id: '5', name: 'Illinois', code: 'IL', served: false },
-];
+const defaultStates: State[] = [];
 
 const defaultItems: EligibilityItem[] = [
   { id: '1', name: 'John Doe', ghlContactId: 'GHL001', reason: 'Income verification', appointmentStatus: 'Scheduled', category: 'accepted' },
@@ -52,33 +62,138 @@ const defaultItems: EligibilityItem[] = [
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [states, setStates] = useState<State[]>(defaultStates);
   const [items, setItems] = useState<EligibilityItem[]>(defaultItems);
+  const [rules, setRules] = useState<Rule[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refreshStates = async () => {
+    setLoading(true);
+    setError(null);
+    const result = await statesApi.getAll();
+    setLoading(false);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    if (result.data) {
+      setStates(result.data);
+    }
+  };
+
+  const refreshRules = async () => {
+    setLoading(true);
+    setError(null);
+    const result = await rulesApi.getAll();
+    setLoading(false);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    if (result.data) {
+      setRules(result.data);
+    }
+  };
 
   useEffect(() => {
-    const storedStates = localStorage.getItem('states');
-    const storedItems = localStorage.getItem('items');
-    if (storedStates) setStates(JSON.parse(storedStates));
-    if (storedItems) setItems(JSON.parse(storedItems));
+    refreshStates();
+    refreshRules();
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('states', JSON.stringify(states));
-  }, [states]);
+    const storedItems = localStorage.getItem('items');
+    if (storedItems) setItems(JSON.parse(storedItems));
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('items', JSON.stringify(items));
   }, [items]);
 
-  const addState = (state: Omit<State, 'id'>) => {
-    const newState = { ...state, id: Date.now().toString() };
-    setStates([...states, newState]);
+  const addState = async (state: Omit<State, 'index'>) => {
+    setLoading(true);
+    setError(null);
+    const result = await statesApi.add(state);
+    setLoading(false);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    await refreshStates();
   };
 
-  const updateState = (id: string, updates: Partial<State>) => {
-    setStates(states.map(s => s.id === id ? { ...s, ...updates } : s));
+  const updateState = async (index: number, updates: Partial<State>) => {
+    setLoading(true);
+    setError(null);
+    const result = await statesApi.update(index, updates);
+    setLoading(false);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    await refreshStates();
   };
 
-  const deleteState = (id: string) => {
-    setStates(states.filter(s => s.id !== id));
+  const deleteState = async (index: number) => {
+    setLoading(true);
+    setError(null);
+    const result = await statesApi.delete(index);
+    setLoading(false);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    await refreshStates();
+  };
+
+  const addRule = async (rule: Omit<Rule, 'index'>) => {
+    setLoading(true);
+    setError(null);
+    const result = await rulesApi.add(rule);
+    setLoading(false);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    await refreshRules();
+  };
+
+  const updateRule = async (index: number, updates: Partial<Rule>) => {
+    setLoading(true);
+    setError(null);
+    const result = await rulesApi.update(index, updates);
+    setLoading(false);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    await refreshRules();
+  };
+
+  const deleteRule = async (index: number) => {
+    setLoading(true);
+    setError(null);
+    const result = await rulesApi.delete(index);
+    setLoading(false);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    await refreshRules();
   };
 
   const addItem = (item: Omit<EligibilityItem, 'id'>) => {
@@ -102,9 +217,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     <DataContext.Provider value={{
       states,
       items,
+      rules,
+      loading,
+      error,
+      refreshStates,
+      refreshRules,
       addState,
       updateState,
       deleteState,
+      addRule,
+      updateRule,
+      deleteRule,
       addItem,
       updateItem,
       deleteItem,

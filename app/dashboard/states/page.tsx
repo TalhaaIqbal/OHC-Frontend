@@ -3,17 +3,18 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { useData } from '@/context/DataContext';
 import { useAuth } from '@/context/AuthContext';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiArrowLeft } from 'react-icons/fi';
 
 export default function StatesPage() {
   const router = useRouter();
-  const { states, addState, updateState, deleteState } = useData();
+  const { states, addState, updateState, deleteState, loading, error, refreshStates } = useData();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingState, setEditingState] = useState<string | null>(null);
+  const [editingState, setEditingState] = useState<number | null>(null);
   const [formData, setFormData] = useState({ name: '', code: '', served: false });
 
   const isAdmin = user?.role === 'admin';
@@ -24,19 +25,19 @@ export default function StatesPage() {
       state.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingState) {
-      updateState(editingState, formData);
+    if (editingState !== null) {
+      await updateState(editingState, formData);
     } else {
-      addState(formData);
+      await addState(formData);
     }
     closeModal();
   };
 
   const openModal = (state?: typeof states[0]) => {
     if (state) {
-      setEditingState(state.id);
+      setEditingState(state.index);
       setFormData({ name: state.name, code: state.code, served: state.served });
     } else {
       setEditingState(null);
@@ -51,16 +52,17 @@ export default function StatesPage() {
     setFormData({ name: '', code: '', served: false });
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (index: number) => {
     if (confirm('Are you sure you want to delete this state?')) {
-      deleteState(id);
+      await deleteState(index);
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-900">
-      <Sidebar />
-      <div className="flex-1 p-8">
+    <ProtectedRoute>
+      <div className="flex min-h-screen bg-gray-900">
+        <Sidebar />
+        <div className="flex-1 p-8">
         <div className="mb-6">
           <button
             onClick={() => router.push('/dashboard')}
@@ -87,16 +89,30 @@ export default function StatesPage() {
         </div>
 
         <div className="mb-6">
-          <div className="relative max-w-md">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search states..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+          <div className="flex items-center gap-4">
+            <div className="relative max-w-md flex-1">
+              <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search states..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <button
+              onClick={refreshStates}
+              disabled={loading}
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-all disabled:opacity-50"
+            >
+              {loading ? 'Loading...' : 'Refresh'}
+            </button>
           </div>
+          {error && (
+            <div className="mt-2 bg-red-500/10 border border-red-500/50 rounded-lg p-3">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
         </div>
 
         <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
@@ -129,7 +145,7 @@ export default function StatesPage() {
                   </tr>
                 ) : (
                   filteredStates.map((state) => (
-                    <tr key={state.id} className="hover:bg-gray-700/50 transition-colors">
+                    <tr key={state.index} className="hover:bg-gray-700/50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-white font-medium">{state.name}</div>
                       </td>
@@ -157,7 +173,7 @@ export default function StatesPage() {
                               <FiEdit2 className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => handleDelete(state.id)}
+                              onClick={() => handleDelete(state.index)}
                               className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-600 rounded-lg transition-all"
                             >
                               <FiTrash2 className="w-4 h-4" />
@@ -245,5 +261,6 @@ export default function StatesPage() {
         )}
       </div>
     </div>
+    </ProtectedRoute>
   );
 }
