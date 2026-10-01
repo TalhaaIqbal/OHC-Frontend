@@ -3,7 +3,7 @@
 import { useData } from '@/context/DataContext';
 import { useAuth } from '@/context/AuthContext';
 import { FiSearch, FiFilter, FiEdit2, FiTrash2 } from 'react-icons/fi';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 interface EligibilityTableProps {
   category: 'accepted' | 'notAccepted' | 'needsReview';
@@ -14,6 +14,9 @@ export default function EligibilityTable({ category, title }: EligibilityTablePr
   const { items, deleteItem } = useData();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
+  const [swipedRow, setSwipedRow] = useState<string | null>(null);
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
 
   const filteredItems = items.filter(
     (item) =>
@@ -26,6 +29,31 @@ export default function EligibilityTable({ category, title }: EligibilityTablePr
   );
 
   const isAdmin = user?.role === 'admin';
+
+  const handleTouchStart = (e: React.TouchEvent, itemId: string) => {
+    touchStartX.current = e.changedTouches[0].screenX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.changedTouches[0].screenX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent, itemId: string) => {
+    const deltaX = touchEndX.current - touchStartX.current;
+    if (deltaX > 50) {
+      // Swipe right detected
+      setSwipedRow(itemId);
+    } else if (deltaX < -50) {
+      // Swipe left detected - close swipe
+      setSwipedRow(null);
+    }
+  };
+
+
+
+  const closeSwipe = () => {
+    setSwipedRow(null);
+  };
 
   return (
     <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
@@ -51,7 +79,7 @@ export default function EligibilityTable({ category, title }: EligibilityTablePr
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" onClick={swipedRow ? closeSwipe : undefined}>
         <table className="w-full">
           <thead className="bg-gray-900">
             <tr>
@@ -89,7 +117,20 @@ export default function EligibilityTable({ category, title }: EligibilityTablePr
               </tr>
             ) : (
               filteredItems.map((item) => (
-                <tr key={item._id} className="hover:bg-gray-700/50 transition-colors">
+                <tr
+                  key={item._id}
+                  className={`hover:bg-gray-700/50 transition-colors relative ${swipedRow === item._id ? 'translate-x-0' : ''}`}
+                  onTouchStart={(e) => handleTouchStart(e, item._id)}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={(e) => handleTouchEnd(e, item._id)}
+                  onClick={() => {
+                    if (swipedRow === item._id) {
+                      closeSwipe();
+                    } else {
+                      setSwipedRow(item._id);
+                    }
+                  }}
+                >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-white font-medium">
                       {item.result_data?.patient?.first_name} {item.result_data?.patient?.last_name}
@@ -136,6 +177,40 @@ export default function EligibilityTable({ category, title }: EligibilityTablePr
                         </button>
                       </div>
                     </td>
+                  )}
+                  {/* Swipe action buttons - slide in from right */}
+                  {swipedRow === item._id && isAdmin && (
+                    <div
+                      className="absolute inset-y-0 right-0 flex items-center gap-2 pr-6 pl-24 bg-gray-800/95 backdrop-blur-sm transition-all"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={() => {
+                          closeSwipe();
+                          // Edit functionality here
+                        }}
+                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all"
+                      >
+                        <FiEdit2 className="w-4 h-4" />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          deleteItem(item._id);
+                          closeSwipe();
+                        }}
+                        className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-all"
+                      >
+                        <FiTrash2 className="w-4 h-4" />
+                        <span>Delete</span>
+                      </button>
+                      <button
+                        onClick={closeSwipe}
+                        className="flex items-center gap-2 bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg transition-all"
+                      >
+                        <span>Cancel</span>
+                      </button>
+                    </div>
                   )}
                 </tr>
               ))
